@@ -1,0 +1,8 @@
+use serde::{Deserialize, Serialize};
+
+/// Generated CRUD model for the `{{ .Params.table }}` relation.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct {{ .Name.Pascal }} {
+    pub id: String,
+    pub name: String,
+}

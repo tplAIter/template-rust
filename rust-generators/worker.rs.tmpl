@@ -1,0 +1,17 @@
+use std::time::Duration;
+
+#[allow(dead_code)]
+pub async fn run_{{ .Name.Snake }}(mut shutdown: tokio::sync::watch::Receiver<bool>) {
+    loop {
+        tokio::select! {
+            changed = shutdown.changed() => {
+                if changed.is_ok() {
+                    break;
+                }
+            },
+            _ = tokio::time::sleep(Duration::from_secs(1)) => {
+                tracing::debug!("{{ .Name.Snake }} worker tick");
+            },
+        }
+    }
+}

@@ -1,0 +1,55 @@
+{{- /*
+  Fragment: temporal (feature: temporal)
+  Temporal auto-setup server + Web UI + a dedicated Postgres instance
+  (kept separate from the application postgres to avoid schema collisions).
+  Requires .Project.Slug. Assembled by: {{ template "compose.temporal" . }}
+*/ -}}
+{{- define "compose.temporal" }}
+  temporal-postgres:
+    image: postgres:16
+    container_name: {{ .Project.Slug }}_temporal_postgres
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    volumes:
+      - ./.local/docker/temporal-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  temporal:
+    image: temporalio/auto-setup:1.25.2
+    container_name: {{ .Project.Slug }}_temporal
+    depends_on:
+      temporal-postgres:
+        condition: service_healthy
+    ports:
+      - "${GOTMPL_TEMPORAL_PORT:-7233}:7233"
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgres
+    healthcheck:
+      test: ["CMD-SHELL", "temporal operator cluster health --address temporal:7233 || tctl --address temporal:7233 cluster health"]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+      start_period: 30s
+
+  temporal-ui:
+    image: temporalio/ui:2.34.0
+    container_name: {{ .Project.Slug }}_temporal_ui
+    depends_on:
+      temporal:
+        condition: service_healthy
+    ports:
+      - "${GOTMPL_TEMPORAL_UI_PORT:-8085}:8080"
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:3000
+{{- end }}

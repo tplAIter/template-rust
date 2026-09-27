@@ -1,0 +1,13 @@
+//! Small persistence boundary. Implementations stay outside the domain.
+
+use std::{future::Future, pin::Pin};
+
+use crate::domain::{DomainError, Entity};
+
+pub type RepositoryFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, DomainError>> + Send + 'a>>;
+
+pub trait EntityRepository: Send + Sync {
+    fn find<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, Option<Entity>>;
+}
+
+// CODEGEN:CRUD_REPOSITORIES

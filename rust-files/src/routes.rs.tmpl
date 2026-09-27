@@ -1,0 +1,51 @@
+use axum::{routing::get, Router};
+use tower_http::{
+    request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
+    trace::TraceLayer,
+};
+
+use crate::health::{liveness, readiness, HealthState};
+
+pub fn router(state: HealthState) -> Router {
+    Router::new()
+        .route("/health", get(liveness))
+        .route("/ready", get(readiness))
+        .route("/entities/{id}", get(crate::controllers::get_entity))
+        // CODEGEN:ROUTES
+        // CODEGEN:CRUD_ROUTES
+        .with_state(state)
+        .layer(SetRequestIdLayer::new(
+            http::header::HeaderName::from_static("x-request-id"),
+            MakeRequestUuid,
+        ))
+        .layer(PropagateRequestIdLayer::new(
+            http::header::HeaderName::from_static("x-request-id"),
+        ))
+        .layer(TraceLayer::new_for_http())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::router;
+    use crate::health::HealthState;
+    use axum::{
+        body::Body,
+        http::{Request, StatusCode},
+    };
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn health_endpoint_is_available() {
+        let app = router(HealthState::without_database());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+}

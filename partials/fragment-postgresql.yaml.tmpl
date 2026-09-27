@@ -1,0 +1,39 @@
+{{- /*
+  Fragment: postgresql (feature: postgres)
+  Postgres 16 + optional pgAdmin. Requires .Project.Slug.
+  Assembled by: {{ template "compose.postgresql" . }}
+*/ -}}
+{{- define "compose.postgresql" }}
+  postgres:
+    image: postgres:16
+    container_name: {{ .Project.Slug }}_postgres
+    environment:
+      POSTGRES_DB: {{ .Project.Slug }}
+      POSTGRES_USER: {{ .Project.Slug }}
+      POSTGRES_PASSWORD: {{ .Project.Slug }}
+    ports:
+      - "${GOTMPL_PG_PORT:-5432}:5432"
+    volumes:
+      - ./.local/tmp/postgres:/tmp
+      - ./.local/docker/postgres:/var/lib/postgresql/data
+      - type: tmpfs
+        target: /dev/shm
+        tmpfs:
+          size: 10240000000
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{ .Project.Slug }}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:8.14
+    container_name: {{ .Project.Slug }}_pgadmin
+    ports:
+      - "${GOTMPL_PGADMIN_PORT:-8088}:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - postgres
+{{- end }}

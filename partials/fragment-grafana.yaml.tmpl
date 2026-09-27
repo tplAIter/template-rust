@@ -1,0 +1,23 @@
+{{- /*
+  Fragment: grafana (always on)
+  Provisions datasource + dashboards from .infra/observability/grafana.
+  Requires .Project.Slug (container name only).
+  Assembled by: {{ template "compose.grafana" . }}
+*/ -}}
+{{- define "compose.grafana" }}
+  grafana:
+    image: grafana/grafana-enterprise:11.4.0
+    container_name: {{ .Project.Slug }}_grafana
+    user: root
+    ports:
+      - "${GOTMPL_GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - ./.local/docker/grafana:/var/lib/grafana
+      - ./.infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./.infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+{{- end }}

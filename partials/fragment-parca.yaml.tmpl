@@ -1,0 +1,24 @@
+{{- /*
+  Fragment: parca (profile: parca)
+  Parca continuous-profiling server. Scrapes the application's net/http/pprof
+  endpoints (/debug/pprof) — no application SDK required. Scrape config is
+  rendered into .infra/observability/parca/parca.yml (needs .Runtime.Port).
+  Requires .Project.Slug. Assembled by: {{ template "compose.parca" . }}
+*/ -}}
+{{- define "compose.parca" }}
+  parca:
+    image: ghcr.io/parca-dev/parca:v0.23.1
+    container_name: {{ .Project.Slug }}_parca
+    profiles:
+      - parca
+    command:
+      - /parca
+      - --config-path=/etc/parca/parca.yml
+      - --http-address=:7070
+    ports:
+      - "${GOTMPL_PARCA_PORT:-7070}:7070"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./.infra/observability/parca/parca.yml:/etc/parca/parca.yml:ro
+{{- end }}

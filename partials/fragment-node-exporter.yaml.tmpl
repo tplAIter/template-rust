@@ -1,0 +1,18 @@
+{{- /*
+  Fragment: node-exporter (always on — host metrics for the obs stack)
+  Requires .Project.Slug (container name only).
+  Assembled by: {{ template "compose.node-exporter" . }}
+*/ -}}
+{{- define "compose.node-exporter" }}
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: {{ .Project.Slug }}_node_exporter
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    pid: host
+    ports:
+      - "${GOTMPL_NODE_EXPORTER_PORT:-9100}:9100"
+    volumes:
+      - /:/host:ro
+{{- end }}

@@ -1,0 +1,22 @@
+use crate::domain::DomainError;
+
+pub struct {{ .Name.Pascal }}Service<U> {
+    usecase: U,
+}
+
+impl<U> {{ .Name.Pascal }}Service<U> {
+    pub fn new(usecase: U) -> Self { Self { usecase } }
+}
+
+impl<U> {{ .Name.Pascal }}Service<U>
+where
+    U: {{ .Name.Pascal }}ServicePort,
+{
+    pub async fn delete(&self, id: &str) -> Result<(), DomainError> {
+        self.usecase.delete(id).await
+    }
+}
+
+pub trait {{ .Name.Pascal }}ServicePort: Send + Sync {
+    fn delete<'a>(&'a self, id: &'a str) -> crate::repository::RepositoryFuture<'a, ()>;
+}

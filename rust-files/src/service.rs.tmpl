@@ -1,0 +1,20 @@
+//! Service boundary: policy/orchestration remains independent of transport.
+
+use crate::{application::GetEntity, domain::{DomainError, Entity}, repository::EntityRepository};
+
+pub struct EntityService<R> {
+    get_entity: GetEntity<R>,
+}
+
+// CODEGEN:CRUD_SERVICES
+
+impl<R> EntityService<R>
+where
+    R: EntityRepository,
+{
+    pub fn new(repository: R) -> Self { Self { get_entity: GetEntity::new(repository) } }
+
+    pub async fn get(&self, id: &str) -> Result<Entity, DomainError> {
+        self.get_entity.execute(id).await
+    }
+}

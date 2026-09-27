@@ -1,0 +1,47 @@
+use crate::domain::DomainError;
+
+pub struct {{ .Name.Pascal }}UseCase<R> {
+    repository: R,
+}
+
+impl<R> {{ .Name.Pascal }}UseCase<R> {
+    pub fn new(repository: R) -> Self { Self { repository } }
+}
+
+impl<R> {{ .Name.Pascal }}UseCase<R>
+where
+    R: {{ .Name.Pascal }}RepositoryPort,
+{
+    pub async fn delete(&self, id: &str) -> Result<(), DomainError> {
+        if !self.repository.delete(id).await? { return Err(DomainError::NotFound); }
+        Ok(())
+    }
+}
+
+pub trait {{ .Name.Pascal }}RepositoryPort: Send + Sync {
+    fn delete<'a>(&'a self, id: &'a str) -> crate::repository::RepositoryFuture<'a, bool>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    struct FakeRepository(bool);
+    impl {{ .Name.Pascal }}RepositoryPort for FakeRepository {
+        fn delete<'a>(&'a self, _id: &'a str) -> crate::repository::RepositoryFuture<'a, bool> {
+            let deleted = self.0;
+            Box::pin(async move { Ok(deleted) })
+        }
+    }
+
+    #[tokio::test]
+    async fn delete_maps_missing_row_to_not_found() {
+        let usecase = {{ .Name.Pascal }}UseCase::new(FakeRepository(false));
+        assert_eq!(usecase.delete("missing").await, Err(DomainError::NotFound));
+    }
+
+    #[tokio::test]
+    async fn delete_accepts_deleted_row() {
+        let usecase = {{ .Name.Pascal }}UseCase::new(FakeRepository(true));
+        assert_eq!(usecase.delete("present").await, Ok(()));
+    }
+}

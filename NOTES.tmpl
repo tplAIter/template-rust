@@ -1,0 +1,11 @@
+  Project {{ .Project.Name }} was created from {{ .Template.Name }}@{{ .Template.Version }}.
+
+  cd {{ .Project.Slug }}
+{{- if is "database" "postgres" }}
+  cp .env.example .env
+  docker compose up -d postgres
+{{- end }}
+  make run
+
+  Verify: curl http://localhost:{{ .Runtime.Port }}/health
+  Quality gate: cargo fmt --all -- --check && cargo clippy --all-targets -- -D warnings && cargo test

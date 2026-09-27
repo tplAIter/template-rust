@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: {{ .Project.Slug }}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    # Only the host side is configurable. PostgreSQL remains on 5432 inside
+    # the Compose network, so the app container always has a stable address.
+    ports: ["${POSTGRES_HOST_PORT:-{{ .Settings.postgres_host_port }}}:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d {{ .Project.Slug }}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  app:
+    build: .
+    environment:
+      APP_NAME: {{ .Project.Slug }}
+      # The container must listen on the same generated Runtime.Port as the
+      # published mapping. Do not inherit the Rust image's 8080 default here.
+      APP_LISTEN_ADDR: "0.0.0.0:{{ .Runtime.Port }}"
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/{{ .Project.Slug }}
+    # `--port` sets the default; APP_HOST_PORT lets concurrent local projects
+    # choose a different host mapping without editing this file.
+    ports: ["${APP_HOST_PORT:-{{ .Runtime.Port }}}:{{ .Runtime.Port }}"]
+    depends_on:
+      postgres:
+        condition: service_healthy

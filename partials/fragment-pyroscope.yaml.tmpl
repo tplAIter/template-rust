@@ -1,0 +1,23 @@
+{{- /*
+  Fragment: pyroscope (profile: pyroscope)
+  Grafana Pyroscope server. The application pushes profiles via the
+  pyroscope-go SDK when the profiling_pyroscope feature is enabled.
+  Requires .Project.Slug. Assembled by: {{ template "compose.pyroscope" . }}
+*/ -}}
+{{- define "compose.pyroscope" }}
+  pyroscope:
+    image: grafana/pyroscope:1.13.0
+    container_name: {{ .Project.Slug }}_pyroscope
+    profiles:
+      - pyroscope
+    ports:
+      - "${GOTMPL_PYROSCOPE_PORT:-4040}:4040"
+    volumes:
+      - ./.local/docker/pyroscope:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:4040/ready | grep -q ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+{{- end }}

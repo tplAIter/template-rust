@@ -1,0 +1,25 @@
+{{- /*
+  Fragment: minio (feature: s3)
+  MinIO object storage + console. Requires .Project.Slug.
+  Note: MINIO_ROOT_USER/PASSWORD must be >= 8 chars; slug is reused as-is.
+  Assembled by: {{ template "compose.minio" . }}
+*/ -}}
+{{- define "compose.minio" }}
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: {{ .Project.Slug }}_minio
+    command: minio server --console-address ":9001" /data
+    ports:
+      - "${GOTMPL_MINIO_PORT:-9000}:9000"
+      - "${GOTMPL_MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - ./.local/docker/minio:/data
+    environment:
+      MINIO_ROOT_USER: {{ .Project.Slug }}_username
+      MINIO_ROOT_PASSWORD: {{ .Project.Slug }}_password
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+{{- end }}

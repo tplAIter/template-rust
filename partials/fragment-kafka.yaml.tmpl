@@ -1,0 +1,49 @@
+{{- /*
+  Fragment: kafka (feature: kafka)
+  Single-node Apache Kafka in KRaft mode (no ZooKeeper) + Kafka UI.
+  Ported from python bitnami image to the official apache/kafka image
+  (bitnami community images were retired). Env-var names follow the
+  apache/kafka convention (KAFKA_* without the CFG_ infix).
+  Requires .Project.Slug. Assembled by: {{ template "compose.kafka" . }}
+*/ -}}
+{{- define "compose.kafka" }}
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: {{ .Project.Slug }}_kafka
+    ports:
+      - "${GOTMPL_KAFKA_PORT:-9092}:9092"
+      - "${GOTMPL_KAFKA_EXTERNAL_PORT:-9094}:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CLUSTER_ID: L0ZEQh1yTbGhNNUE7-6wSQ
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  kafka_ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: {{ .Project.Slug }}_kafka_ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "${GOTMPL_KAFKA_UI_PORT:-8089}:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: kraft
+      KAFKA_CLUSTERS_0_BOOTSTRAP_SERVERS: kafka:9092
+      DYNAMIC_CONFIG_ENABLED: "true"
+{{- end }}

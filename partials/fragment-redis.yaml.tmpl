@@ -1,0 +1,20 @@
+{{- /*
+  Fragment: redis (feature: redis)
+  Requires .Project.Slug. Assembled by: {{ template "compose.redis" . }}
+*/ -}}
+{{- define "compose.redis" }}
+  redis:
+    image: redis:alpine
+    container_name: {{ .Project.Slug }}_redis
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    ports:
+      - "${GOTMPL_REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./.local/docker/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+{{- end }}

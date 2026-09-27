@@ -1,0 +1,21 @@
+{{- /*
+  Fragment: prometheus (always on)
+  Requires .Project.Slug (container name only). Scrape config is mounted from
+  .infra/observability/prometheus/prometheus.example.yml (rendered separately).
+  Assembled by: {{ template "compose.prometheus" . }}
+*/ -}}
+{{- define "compose.prometheus" }}
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: {{ .Project.Slug }}_prometheus
+    ports:
+      - "${GOTMPL_PROMETHEUS_PORT:-9090}:9090"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./.infra/observability/prometheus/prometheus.example.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+{{- end }}

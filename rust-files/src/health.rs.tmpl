@@ -1,0 +1,62 @@
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use serde::Serialize;
+{{- if is "database" "postgres" }}
+use sqlx::PgPool;
+{{- end }}
+
+#[derive(Clone)]
+pub struct HealthState {
+{{- if is "database" "postgres" }}
+    pub database: Option<PgPool>,
+{{- end }}
+}
+
+impl HealthState {
+{{- if is "database" "postgres" }}
+    pub fn with_database(database: PgPool) -> Self {
+        Self {
+            database: Some(database),
+        }
+    }
+{{- end }}
+    // The PostgreSQL application uses `with_database` at runtime; the
+    // database-free constructor is retained only for router unit tests in
+    // that profile. In the `database=none` profile it remains runtime API.
+{{- if is "database" "postgres" }}
+    #[cfg(test)]
+{{- end }}
+    pub fn without_database() -> Self {
+        Self {
+{{- if is "database" "postgres" }}
+            database: None,
+{{- end }}
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct Health {
+    status: &'static str,
+}
+
+pub async fn liveness() -> impl IntoResponse {
+    (StatusCode::OK, Json(Health { status: "ok" }))
+}
+
+pub async fn readiness(State(state): State<HealthState>) -> impl IntoResponse {
+{{- if is "database" "postgres" }}
+    if let Some(database) = &state.database {
+        if sqlx::query("SELECT 1").execute(database).await.is_err() {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(Health {
+                    status: "unavailable",
+                }),
+            );
+        }
+    }
+{{- else }}
+    let _ = state;
+{{- end }}
+    (StatusCode::OK, Json(Health { status: "ready" }))
+}

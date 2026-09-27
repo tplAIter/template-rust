@@ -1,0 +1,20 @@
+use anyhow::Result;
+use axum::Router;
+
+use crate::{config::Config, health::HealthState};
+
+pub struct Application {
+    pub config: Config,
+    pub router: Router,
+}
+
+pub async fn build(config: Config) -> Result<Application> {
+{{- if is "database" "postgres" }}
+    let pool = crate::db::connect(&config.database_url).await?;
+    let health = HealthState::with_database(pool);
+{{- else }}
+    let health = HealthState::without_database();
+{{- end }}
+    let router = crate::routes::router(health);
+    Ok(Application { config, router })
+}

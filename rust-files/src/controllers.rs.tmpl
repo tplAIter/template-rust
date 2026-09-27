@@ -1,0 +1,12 @@
+//! Axum adapter boundary. Domain/application code never imports this module.
+
+use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
+
+// CODEGEN:CRUD_CONTROLLERS
+
+pub async fn get_entity(Path(id): Path<String>) -> impl IntoResponse {
+    if id.trim().is_empty() {
+        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"code": "validation_error"})));
+    }
+    (StatusCode::NOT_IMPLEMENTED, Json(serde_json::json!({"code": "planned"})))
+}

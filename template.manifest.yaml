@@ -1,0 +1,24 @@
+apiVersion: tplater.dev/v1alpha1
+kind: Template
+metadata:
+  name: rust-service
+  version: 0.0.0-local
+  description: Rust service template checkpoint with neutral retained render assets.
+engine:
+  type: gotemplate
+  root: rust-files
+settings:
+  - group: database
+    title: Database
+    type: select
+    default: postgres
+    options:
+      - id: none
+        title: No database
+      - id: postgres
+        title: PostgreSQL
+        settings:
+          - group: postgres_host_port
+            title: PostgreSQL host port
+            type: int
+            default: 5432

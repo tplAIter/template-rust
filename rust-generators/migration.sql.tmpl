@@ -1,0 +1,7 @@
+-- {{ .Name.Pascal }} schema change.
+-- Keep migrations forward-only; SQLx tracks their checksum in _sqlx_migrations.
+-- `--table` is explicit: migration titles are never pluralized or parsed.
+CREATE TABLE {{ .Params.table }} (
+    id UUID PRIMARY KEY,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

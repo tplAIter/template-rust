@@ -1,0 +1,21 @@
+{{- /*
+  Fragment: rabbitmq (feature: rabbitmq)
+  RabbitMQ 3.13 with the management plugin. Requires .Project.Slug.
+  Assembled by: {{ template "compose.rabbitmq" . }}
+*/ -}}
+{{- define "compose.rabbitmq" }}
+  rabbitmq:
+    image: rabbitmq:3.13.4-management
+    container_name: {{ .Project.Slug }}_rabbitmq
+    ports:
+      - "${GOTMPL_RABBITMQ_PORT:-5672}:5672"
+      - "${GOTMPL_RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 20s
+      timeout: 20s
+      retries: 6
+    environment:
+      RABBITMQ_DEFAULT_USER: {{ .Project.Slug }}
+      RABBITMQ_DEFAULT_PASS: {{ .Project.Slug }}
+{{- end }}

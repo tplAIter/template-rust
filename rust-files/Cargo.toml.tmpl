@@ -1,0 +1,38 @@
+[package]
+name = "{{ .Project.Slug }}"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+
+[features]
+{{- if is "database" "postgres" }}
+default = ["sqlx-repository"]
+{{- else }}
+default = []
+{{- end }}
+sqlx-repository = ["dep:sqlx"]
+
+[dependencies]
+anyhow = "1"
+axum = "0.8"
+http = "1"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+# Keep worker-generator dependencies explicit. A generated worker uses
+# `tokio::sync::watch` and `tokio::time::sleep`; these must not depend on an
+# incidental feature enabled by another crate (such as SQLx).
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "net", "sync", "time"] }
+tower-http = { version = "0.6", features = ["request-id", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+# `Uuid` is part of the domain-generator contract. UUID generation is handled
+# by Tower's request-id layer; the service itself does not call `Uuid::new_v4`.
+uuid = { version = "1", features = ["serde"] }
+serde_json = "1"
+# Runtime migrations are intentionally not linked into the service. The catalog
+# uses sqlx-cli for `sqlx migrate ...`; add `migrate` only when application code
+# actually embeds migrations with `sqlx::migrate!` / `Migrator`.
+sqlx = { version = "0.8", optional = true, default-features = false, features = ["runtime-tokio-rustls", "postgres", "uuid"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }

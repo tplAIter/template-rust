@@ -6,7 +6,7 @@
 
 <p align="center">A Rust service template rendered through tplAIter's existing Go engine.</p>
 
-<p align="center"><strong>Status: private development preview · local manifest</strong></p>
+<p align="center"><strong>Status: public development preview · local manifest</strong></p>
 
 <p align="center"><a href="https://github.com/tplAIter/tplaiter">core CLI</a> · <a href="https://github.com/tplAIter/template-base">base template</a> · <a href="https://github.com/tplAIter/template-go">Go template</a> · <a href="https://github.com/tplAIter/tplaiter/blob/main/docs/template-validation.md">validation workflow</a></p>
 

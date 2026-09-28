@@ -17,7 +17,7 @@ jobs:
         with:
           toolchain: 1.98.0
       - id: template
-        uses: tplAIter/tplaiter/.github/actions/template-check@df3f08ee70dace4c6cbafac5e1e7735b0081c42f
+        uses: tplAIter/tplaiter/.github/actions/template-check@12cf8f810faa25f8c573dcc22fbebb45b1c4db8c
       - name: Check every rendered Rust fixture
         env:
           RENDER_ROOT: ${{ steps.template.outputs.render-root }}

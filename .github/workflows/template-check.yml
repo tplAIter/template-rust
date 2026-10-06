@@ -16,6 +16,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de
         with:
           toolchain: 1.98.0
+          components: rustfmt, clippy
       - name: Materialize and check declared generators
         env:
           RUST_FIXTURE_ROOT: ${{ runner.temp }}/rust-generated
@@ -41,6 +42,8 @@ jobs:
         run: |
           set -euo pipefail
           for project in "$RENDER_ROOT"/*; do
+            (cd "$project" && cargo fmt --all -- --check)
+            (cd "$project" && cargo clippy --all-targets --locked -- -D warnings)
             (cd "$project" && cargo test --all-targets --locked)
             (cd "$project" && cargo check --all-targets --locked)
           done
@@ -57,6 +60,31 @@ jobs:
         run: |
           set -euo pipefail
           for project in "$RUNNER_TEMP/rust-generated"/*; do
+            (cd "$project" && cargo fmt --all -- --check)
+            (cd "$project" && cargo clippy --all-targets --locked -- -D warnings)
             (cd "$project" && cargo test --all-targets --locked)
+            (cd "$project" && cargo check --all-targets --locked)
+          done
+
+  rust-msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: '1.27.1'
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de
+        with:
+          toolchain: 1.85.0
+      - name: Materialize rendered fixtures for Rust 1.85
+        env:
+          RUST_FIXTURE_ROOT: ${{ runner.temp }}/rust-msrv
+        run: cd checks && go test -count=1 ./...
+      - name: Check every rendered Rust fixture with Rust 1.85
+        env:
+          RUST_FIXTURE_ROOT: ${{ runner.temp }}/rust-msrv
+        run: |
+          set -euo pipefail
+          for project in "$RUST_FIXTURE_ROOT"/*; do
             (cd "$project" && cargo check --all-targets --locked)
           done

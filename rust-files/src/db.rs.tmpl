@@ -1,9 +1,23 @@
 use anyhow::Context;
 use sqlx::{PgPool, postgres::PgPoolOptions};
+use std::{future::Future, time::Duration};
+
+pub const DATABASE_OPERATION_TIMEOUT: Duration = Duration::from_secs(5);
+
+pub async fn bounded_database_operation<T, E, F>(future: F) -> Result<T, ()>
+where
+    F: Future<Output = Result<T, E>>,
+{
+    tokio::time::timeout(DATABASE_OPERATION_TIMEOUT, future)
+        .await
+        .map_err(|_| ())?
+        .map_err(|_| ())
+}
 
 pub async fn connect(database_url: &str) -> anyhow::Result<PgPool> {
     PgPoolOptions::new()
         .max_connections(10)
+        .acquire_timeout(DATABASE_OPERATION_TIMEOUT)
         .connect(database_url)
         .await
         .context("connect to PostgreSQL")

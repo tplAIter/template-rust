@@ -1,5 +1,6 @@
 use crate::{
     application::{{ .Name.Snake }}::{{ .Name.Pascal }}RepositoryPort,
+    db::bounded_database_operation,
     domain::{DomainError, {{ .Name.Snake }}_crud::{{ .Name.Pascal }}},
     repository::RepositoryFuture,
 };
@@ -14,20 +15,24 @@ impl {{ .Name.Pascal }}Repository {
         Self { pool }
     }
     pub async fn create(&self, value: &{{ .Name.Pascal }}) -> Result<(), DomainError> {
-        sqlx::query("INSERT INTO \"{{ .Params.table }}\" (id, name) VALUES ($1::uuid, $2)")
-            .bind(&value.id)
-            .bind(&value.name)
-            .execute(&self.pool)
-            .await
-            .map_err(|_| DomainError::Storage)?;
+        bounded_database_operation(
+            sqlx::query("INSERT INTO \"{{ .Params.table }}\" (id, name) VALUES ($1::uuid, $2)")
+                .bind(&value.id)
+                .bind(&value.name)
+                .execute(&self.pool),
+        )
+        .await
+        .map_err(|_| DomainError::Storage)?;
         Ok(())
     }
     pub async fn find(&self, id: &str) -> Result<Option<{{ .Name.Pascal }}>, DomainError> {
-        let row = sqlx::query("SELECT id::text AS id, name FROM \"{{ .Params.table }}\" WHERE id = $1::uuid")
-            .bind(id)
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(|_| DomainError::Storage)?;
+        let row = bounded_database_operation(
+            sqlx::query("SELECT id::text AS id, name FROM \"{{ .Params.table }}\" WHERE id = $1::uuid")
+                .bind(id)
+                .fetch_optional(&self.pool),
+        )
+        .await
+        .map_err(|_| DomainError::Storage)?;
         row.map(|row| {
             Ok({{ .Name.Pascal }} {
                 id: row.try_get("id").map_err(|_| DomainError::Storage)?,
@@ -37,20 +42,24 @@ impl {{ .Name.Pascal }}Repository {
         .transpose()
     }
     pub async fn update(&self, value: &{{ .Name.Pascal }}) -> Result<bool, DomainError> {
-        let result = sqlx::query("UPDATE \"{{ .Params.table }}\" SET name = $2 WHERE id = $1::uuid")
-            .bind(&value.id)
-            .bind(&value.name)
-            .execute(&self.pool)
-            .await
-            .map_err(|_| DomainError::Storage)?;
+        let result = bounded_database_operation(
+            sqlx::query("UPDATE \"{{ .Params.table }}\" SET name = $2 WHERE id = $1::uuid")
+                .bind(&value.id)
+                .bind(&value.name)
+                .execute(&self.pool),
+        )
+        .await
+        .map_err(|_| DomainError::Storage)?;
         Ok(result.rows_affected() == 1)
     }
     pub async fn delete(&self, id: &str) -> Result<bool, DomainError> {
-        let result = sqlx::query("DELETE FROM \"{{ .Params.table }}\" WHERE id = $1::uuid")
-            .bind(id)
-            .execute(&self.pool)
-            .await
-            .map_err(|_| DomainError::Storage)?;
+        let result = bounded_database_operation(
+            sqlx::query("DELETE FROM \"{{ .Params.table }}\" WHERE id = $1::uuid")
+                .bind(id)
+                .execute(&self.pool),
+        )
+        .await
+        .map_err(|_| DomainError::Storage)?;
         Ok(result.rows_affected() == 1)
     }
 }

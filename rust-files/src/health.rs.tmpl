@@ -1,3 +1,6 @@
+{{ if is "database" "postgres" -}}
+use crate::db::bounded_database_operation;
+{{- end }}
 use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 use serde::Serialize;
 {{- if is "database" "postgres" }}
@@ -48,7 +51,10 @@ pub async fn liveness() -> impl IntoResponse {
 pub async fn readiness(State(state): State<HealthState>) -> impl IntoResponse {
 {{- if is "database" "postgres" }}
     if let Some(database) = &state.database {
-        if sqlx::query("SELECT 1").execute(database).await.is_err() {
+        if bounded_database_operation(sqlx::query("SELECT 1").execute(database))
+            .await
+            .is_err()
+        {
             return (
                 StatusCode::SERVICE_UNAVAILABLE,
                 Json(Health {
@@ -62,3 +68,31 @@ pub async fn readiness(State(state): State<HealthState>) -> impl IntoResponse {
 {{- end }}
     (StatusCode::OK, Json(Health { status: "ready" }))
 }
+{{- if is "database" "postgres" }}
+
+#[cfg(test)]
+mod tests {
+    use super::bounded_database_operation;
+
+    #[tokio::test]
+    async fn database_probe_accepts_success_and_refuses_error_or_timeout() {
+        assert_eq!(
+            bounded_database_operation(async { Ok::<_, ()>(()) }).await,
+            Ok(())
+        );
+        assert!(
+            bounded_database_operation(async { Err::<(), _>(()) })
+                .await
+                .is_err()
+        );
+        assert!(
+            bounded_database_operation(async {
+                tokio::time::sleep(std::time::Duration::from_secs(6)).await;
+                Ok::<_, ()>(())
+            })
+            .await
+            .is_err()
+        );
+    }
+}
+{{- end }}

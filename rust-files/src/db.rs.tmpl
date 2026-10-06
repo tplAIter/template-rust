@@ -14,11 +14,10 @@ where
         .map_err(|_| ())
 }
 
-pub async fn connect(database_url: &str) -> anyhow::Result<PgPool> {
+pub fn connect_lazy(database_url: &str) -> anyhow::Result<PgPool> {
     PgPoolOptions::new()
         .max_connections(10)
         .acquire_timeout(DATABASE_OPERATION_TIMEOUT)
-        .connect(database_url)
-        .await
-        .context("connect to PostgreSQL")
+        .connect_lazy(database_url)
+        .context("prepare PostgreSQL pool")
 }

@@ -1,6 +1,5 @@
-{{ if is "database" "postgres" -}}
-use crate::db::bounded_database_operation;
-{{- end }}
+{{- if is "database" "postgres" }}use crate::db::bounded_database_operation;
+{{ end -}}
 use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 use serde::Serialize;
 {{- if is "database" "postgres" }}

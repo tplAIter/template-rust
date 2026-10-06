@@ -1,22 +1,122 @@
-use crate::domain::DomainError;
+use crate::{
+    application::{{ .Name.Snake }}::{ {{ .Name.Pascal }}RepositoryPort, {{ .Name.Pascal }}UseCase},
+    domain::{DomainError, {{ .Name.Snake }}_crud::{{ .Name.Pascal }}},
+    repository::RepositoryFuture,
+};
 
+pub trait {{ .Name.Pascal }}ServicePort: Send + Sync {
+    fn create<'a>(&'a self, value: &'a {{ .Name.Pascal }}) -> RepositoryFuture<'a, ()>;
+    fn find<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, {{ .Name.Pascal }}>;
+    fn update<'a>(&'a self, value: &'a {{ .Name.Pascal }}) -> RepositoryFuture<'a, ()>;
+    fn delete<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, ()>;
+}
+impl<R: {{ .Name.Pascal }}RepositoryPort> {{ .Name.Pascal }}ServicePort for {{ .Name.Pascal }}UseCase<R> {
+    fn create<'a>(&'a self, value: &'a {{ .Name.Pascal }}) -> RepositoryFuture<'a, ()> {
+        Box::pin(self.create(value))
+    }
+    fn find<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, {{ .Name.Pascal }}> {
+        Box::pin(self.find(id))
+    }
+    fn update<'a>(&'a self, value: &'a {{ .Name.Pascal }}) -> RepositoryFuture<'a, ()> {
+        Box::pin(self.update(value))
+    }
+    fn delete<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, ()> {
+        Box::pin(self.delete(id))
+    }
+}
 pub struct {{ .Name.Pascal }}Service<U> {
     usecase: U,
 }
-
-impl<U> {{ .Name.Pascal }}Service<U> {
-    pub fn new(usecase: U) -> Self { Self { usecase } }
-}
-
-impl<U> {{ .Name.Pascal }}Service<U>
-where
-    U: {{ .Name.Pascal }}ServicePort,
-{
+impl<U: {{ .Name.Pascal }}ServicePort> {{ .Name.Pascal }}Service<U> {
+    pub fn new(usecase: U) -> Self {
+        Self { usecase }
+    }
+    pub async fn create(&self, value: &{{ .Name.Pascal }}) -> Result<(), DomainError> {
+        self.usecase.create(value).await
+    }
+    pub async fn find(&self, id: &str) -> Result<{{ .Name.Pascal }}, DomainError> {
+        self.usecase.find(id).await
+    }
+    pub async fn update(&self, value: &{{ .Name.Pascal }}) -> Result<(), DomainError> {
+        self.usecase.update(value).await
+    }
     pub async fn delete(&self, id: &str) -> Result<(), DomainError> {
         self.usecase.delete(id).await
     }
 }
 
-pub trait {{ .Name.Pascal }}ServicePort: Send + Sync {
-    fn delete<'a>(&'a self, id: &'a str) -> crate::repository::RepositoryFuture<'a, ()>;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Mutex;
+    struct Memory(Mutex<Option<{{ .Name.Pascal }}>>);
+    impl {{ .Name.Pascal }}RepositoryPort for Memory {
+        fn create<'a>(&'a self, v: &'a {{ .Name.Pascal }}) -> RepositoryFuture<'a, ()> {
+            Box::pin(async move {
+                *self.0.lock().unwrap() = Some(v.clone());
+                Ok(())
+            })
+        }
+        fn find<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, Option<{{ .Name.Pascal }}>> {
+            Box::pin(async move {
+                Ok(self
+                    .0
+                    .lock()
+                    .unwrap()
+                    .as_ref()
+                    .filter(|v| v.id == id)
+                    .cloned())
+            })
+        }
+        fn update<'a>(&'a self, v: &'a {{ .Name.Pascal }}) -> RepositoryFuture<'a, bool> {
+            Box::pin(async move {
+                let mut row = self.0.lock().unwrap();
+                if row.as_ref().is_some_and(|x| x.id == v.id) {
+                    *row = Some(v.clone());
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            })
+        }
+        fn delete<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, bool> {
+            Box::pin(async move {
+                let mut row = self.0.lock().unwrap();
+                if row.as_ref().is_some_and(|x| x.id == id) {
+                    *row = None;
+                    Ok(true)
+                } else {
+                    Ok(false)
+                }
+            })
+        }
+    }
+    #[tokio::test]
+    async fn complete_bridge_round_trip_and_missing_rows() {
+        let service =
+            {{ .Name.Pascal }}Service::new({{ .Name.Pascal }}UseCase::new(Memory(Mutex::new(None))));
+        let mut value = {{ .Name.Pascal }} {
+            id: "00000000-0000-0000-0000-000000000001".into(),
+            name: "first".into(),
+        };
+        assert_eq!(service.find(&value.id).await, Err(DomainError::NotFound));
+        assert_eq!(service.update(&value).await, Err(DomainError::NotFound));
+        assert_eq!(service.delete(&value.id).await, Err(DomainError::NotFound));
+        service.create(&value).await.unwrap();
+        assert_eq!(service.find(&value.id).await.unwrap(), value);
+        value.name = "second".into();
+        service.update(&value).await.unwrap();
+        assert_eq!(service.find(&value.id).await.unwrap(), value);
+        service.delete(&value.id).await.unwrap();
+        assert_eq!(service.find(&value.id).await, Err(DomainError::NotFound));
+        assert!(matches!(
+            service.find("invalid").await,
+            Err(DomainError::Validation(_))
+        ));
+        value.name = " ".into();
+        assert!(matches!(
+            service.create(&value).await,
+            Err(DomainError::Validation(_))
+        ));
+    }
 }

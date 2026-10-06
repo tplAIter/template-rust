@@ -18,3 +18,9 @@ where
         self.get_entity.execute(id).await
     }
 }
+
+{{ if is "layout" "layer_files" }}
+pub fn register_service_layer() {}
+{{ else }}
+pub fn register_service_entity() {}
+{{ end }}

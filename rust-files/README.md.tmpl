@@ -1,0 +1,6 @@
+# {{ .Project.Slug }}
+
+Generated Rust service. Set DATABASE_URL only for the PostgreSQL profile.
+Use cargo test --locked --offline and cargo check --locked --offline after verifying local cache availability.
+Forward SQLx migrations are applied separately by an approved operator; the service does not run migrations.
+CRUD IDs are caller-provided UUIDs; database acceptance requires a disposable PostgreSQL test environment.

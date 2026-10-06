@@ -1,8 +1,5 @@
--- Generated CRUD schema for {{ .Params.table }}.
-CREATE TABLE IF NOT EXISTS {{ .Params.table }} (
+-- Forward-only SQLx migration. The numeric sequence is independent of the title.
+CREATE TABLE "{{ .Params.table }}" (
     id UUID PRIMARY KEY,
     name TEXT NOT NULL
 );
-
--- +goose Down
-DROP TABLE IF EXISTS {{ .Params.table }};

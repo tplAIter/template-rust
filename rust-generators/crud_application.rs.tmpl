@@ -1,47 +1,55 @@
-use crate::domain::DomainError;
+use crate::{
+    domain::{DomainError, {{ .Name.Snake }}_crud::{{ .Name.Pascal }}},
+    repository::RepositoryFuture,
+};
 
+pub trait {{ .Name.Pascal }}RepositoryPort: Send + Sync {
+    fn create<'a>(&'a self, value: &'a {{ .Name.Pascal }}) -> RepositoryFuture<'a, ()>;
+    fn find<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, Option<{{ .Name.Pascal }}>>;
+    fn update<'a>(&'a self, value: &'a {{ .Name.Pascal }}) -> RepositoryFuture<'a, bool>;
+    fn delete<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, bool>;
+}
 pub struct {{ .Name.Pascal }}UseCase<R> {
     repository: R,
 }
-
-impl<R> {{ .Name.Pascal }}UseCase<R> {
-    pub fn new(repository: R) -> Self { Self { repository } }
-}
-
-impl<R> {{ .Name.Pascal }}UseCase<R>
-where
-    R: {{ .Name.Pascal }}RepositoryPort,
-{
-    pub async fn delete(&self, id: &str) -> Result<(), DomainError> {
-        if !self.repository.delete(id).await? { return Err(DomainError::NotFound); }
+impl<R: {{ .Name.Pascal }}RepositoryPort> {{ .Name.Pascal }}UseCase<R> {
+    pub fn new(repository: R) -> Self {
+        Self { repository }
+    }
+    fn validate_id(id: &str) -> Result<(), DomainError> {
+        uuid::Uuid::parse_str(id)
+            .map_err(|_| DomainError::Validation("id must be a UUID".into()))?;
         Ok(())
     }
-}
-
-pub trait {{ .Name.Pascal }}RepositoryPort: Send + Sync {
-    fn delete<'a>(&'a self, id: &'a str) -> crate::repository::RepositoryFuture<'a, bool>;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    struct FakeRepository(bool);
-    impl {{ .Name.Pascal }}RepositoryPort for FakeRepository {
-        fn delete<'a>(&'a self, _id: &'a str) -> crate::repository::RepositoryFuture<'a, bool> {
-            let deleted = self.0;
-            Box::pin(async move { Ok(deleted) })
+    fn validate(value: &{{ .Name.Pascal }}) -> Result<(), DomainError> {
+        Self::validate_id(&value.id)?;
+        if value.name.trim().is_empty() {
+            return Err(DomainError::Validation("name must not be empty".into()));
+        }
+        Ok(())
+    }
+    pub async fn create(&self, value: &{{ .Name.Pascal }}) -> Result<(), DomainError> {
+        Self::validate(value)?;
+        self.repository.create(value).await
+    }
+    pub async fn find(&self, id: &str) -> Result<{{ .Name.Pascal }}, DomainError> {
+        Self::validate_id(id)?;
+        self.repository.find(id).await?.ok_or(DomainError::NotFound)
+    }
+    pub async fn update(&self, value: &{{ .Name.Pascal }}) -> Result<(), DomainError> {
+        Self::validate(value)?;
+        if self.repository.update(value).await? {
+            Ok(())
+        } else {
+            Err(DomainError::NotFound)
         }
     }
-
-    #[tokio::test]
-    async fn delete_maps_missing_row_to_not_found() {
-        let usecase = {{ .Name.Pascal }}UseCase::new(FakeRepository(false));
-        assert_eq!(usecase.delete("missing").await, Err(DomainError::NotFound));
-    }
-
-    #[tokio::test]
-    async fn delete_accepts_deleted_row() {
-        let usecase = {{ .Name.Pascal }}UseCase::new(FakeRepository(true));
-        assert_eq!(usecase.delete("present").await, Ok(()));
+    pub async fn delete(&self, id: &str) -> Result<(), DomainError> {
+        Self::validate_id(id)?;
+        if self.repository.delete(id).await? {
+            Ok(())
+        } else {
+            Err(DomainError::NotFound)
+        }
     }
 }

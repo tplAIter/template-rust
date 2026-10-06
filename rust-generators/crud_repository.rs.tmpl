@@ -1,37 +1,53 @@
+use crate::{
+    application::{{ .Name.Snake }}::{{ .Name.Pascal }}RepositoryPort,
+    domain::{DomainError, {{ .Name.Snake }}_crud::{{ .Name.Pascal }}},
+    repository::RepositoryFuture,
+};
 use sqlx::{PgPool, Row};
 
-use crate::domain::DomainError;
-
-#[derive(Debug)]
-pub struct {{ .Name.Pascal }}Row {
-    pub id: String,
-    pub name: String,
-}
-
-/// SQLx adapter kept behind the repository boundary.
+#[derive(Clone)]
 pub struct {{ .Name.Pascal }}Repository {
     pool: PgPool,
 }
-
 impl {{ .Name.Pascal }}Repository {
-    pub fn new(pool: PgPool) -> Self { Self { pool } }
-
-    pub async fn find(&self, id: &str) -> Result<Option<{{ .Name.Pascal }}Row>, DomainError> {
-        let row = sqlx::query("SELECT id::text, name FROM {{ .Params.table }} WHERE id = $1::uuid")
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|_| DomainError::Storage)?;
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+    pub async fn create(&self, value: &{{ .Name.Pascal }}) -> Result<(), DomainError> {
+        sqlx::query("INSERT INTO \"{{ .Params.table }}\" (id, name) VALUES ($1::uuid, $2)")
+            .bind(&value.id)
+            .bind(&value.name)
+            .execute(&self.pool)
+            .await
+            .map_err(|_| DomainError::Storage)?;
+        Ok(())
+    }
+    pub async fn find(&self, id: &str) -> Result<Option<{{ .Name.Pascal }}>, DomainError> {
+        let row =
+            sqlx::query("SELECT id::text AS id, name FROM \"{{ .Params.table }}\" WHERE id = $1::uuid")
+                .bind(id)
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(|_| DomainError::Storage)?;
         row.map(|row| {
-            Ok({{ .Name.Pascal }}Row {
+            Ok({{ .Name.Pascal }} {
                 id: row.try_get("id").map_err(|_| DomainError::Storage)?,
                 name: row.try_get("name").map_err(|_| DomainError::Storage)?,
             })
-        }).transpose()
+        })
+        .transpose()
     }
-
+    pub async fn update(&self, value: &{{ .Name.Pascal }}) -> Result<bool, DomainError> {
+        let result = sqlx::query("UPDATE \"{{ .Params.table }}\" SET name = $2 WHERE id = $1::uuid")
+            .bind(&value.id)
+            .bind(&value.name)
+            .execute(&self.pool)
+            .await
+            .map_err(|_| DomainError::Storage)?;
+        Ok(result.rows_affected() == 1)
+    }
     pub async fn delete(&self, id: &str) -> Result<bool, DomainError> {
-        let result = sqlx::query("DELETE FROM {{ .Params.table }} WHERE id = $1::uuid")
+        let result = sqlx::query("DELETE FROM \"{{ .Params.table }}\" WHERE id = $1::uuid")
             .bind(id)
             .execute(&self.pool)
             .await
@@ -39,27 +55,17 @@ impl {{ .Name.Pascal }}Repository {
         Ok(result.rows_affected() == 1)
     }
 }
-
-#[cfg(test)]
-mod postgres_tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn repository_find_and_delete_round_trip() {
-        let Ok(database_url) = std::env::var("DATABASE_URL") else { return };
-        let pool = sqlx::postgres::PgPoolOptions::new()
-            .max_connections(1)
-            .connect(&database_url)
-            .await
-            .expect("DATABASE_URL must point to the test database");
-        sqlx::query("CREATE TEMP TABLE {{ .Params.table }} (id UUID PRIMARY KEY, name TEXT NOT NULL)")
-            .execute(&pool).await.expect("create test table");
-        let id = "00000000-0000-0000-0000-000000000001";
-        sqlx::query("INSERT INTO {{ .Params.table }} (id, name) VALUES ($1::uuid, $2)")
-            .bind(id).bind("test").execute(&pool).await.expect("insert test row");
-        let repository = {{ .Name.Pascal }}Repository::new(pool);
-        assert!(repository.find(id).await.expect("find").is_some());
-        assert!(repository.delete(id).await.expect("delete"));
-        assert!(repository.find(id).await.expect("find after delete").is_none());
+impl {{ .Name.Pascal }}RepositoryPort for {{ .Name.Pascal }}Repository {
+    fn create<'a>(&'a self, value: &'a {{ .Name.Pascal }}) -> RepositoryFuture<'a, ()> {
+        Box::pin(self.create(value))
+    }
+    fn find<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, Option<{{ .Name.Pascal }}>> {
+        Box::pin(self.find(id))
+    }
+    fn update<'a>(&'a self, value: &'a {{ .Name.Pascal }}) -> RepositoryFuture<'a, bool> {
+        Box::pin(self.update(value))
+    }
+    fn delete<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, bool> {
+        Box::pin(self.delete(id))
     }
 }

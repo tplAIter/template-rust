@@ -1,0 +1,16 @@
+apiVersion: tplater.dev/block-export/v1
+kind: BlockExport
+metadata: {id: rust.service.layer, version: 0.1.0}
+compatibility: {tplater: ">=0.3.0 <0.4.0", markerSchema: tplater.dev/managed-block/v1}
+mergeStrategy: managed-blocks-v1
+formatter: {adapter: rustfmt, optionsDigest: sha256:9a81727c8ca2c86ea22cac7831d67c3768fa860f2674a19c4edc6e76f90f4799}
+targets:
+  - path: src/controllers.rs
+    blocks:
+      - {id: rust.controller.base, provider: root, layout: layer_files, body: block-exports/bodies/layer/controller.rs, order: 100}
+  - path: src/service.rs
+    blocks:
+      - {id: rust.service.base, provider: root, layout: layer_files, body: block-exports/bodies/layer/service.rs, order: 100}
+  - path: src/repository/mod.rs
+    blocks:
+      - {id: rust.repository.base, provider: root, layout: layer_files, body: block-exports/bodies/layer/repository.rs, order: 100}

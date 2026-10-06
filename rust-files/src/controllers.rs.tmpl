@@ -10,3 +10,9 @@ pub async fn get_entity(Path(id): Path<String>) -> impl IntoResponse {
     }
     (StatusCode::NOT_IMPLEMENTED, Json(serde_json::json!({"code": "planned"})))
 }
+
+{{ if is "layout" "layer_files" }}
+pub fn register_controller_layer() {}
+{{ else }}
+pub fn register_controller_entity() {}
+{{ end }}

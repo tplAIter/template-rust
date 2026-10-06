@@ -16,6 +16,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de
         with:
           toolchain: 1.98.0
+      - name: Materialize and check declared generators
+        env:
+          RUST_FIXTURE_ROOT: ${{ runner.temp }}/rust-generated
+        run: cd checks && go test -count=1 ./...
       - id: template
         uses: tplAIter/tplaiter/.github/actions/template-check@12cf8f810faa25f8c573dcc22fbebb45b1c4db8c
       - name: Check every rendered Rust fixture
@@ -24,6 +28,13 @@ jobs:
         run: |
           set -euo pipefail
           for project in "$RENDER_ROOT"/*; do
+            (cd "$project" && cargo test --all-targets --locked)
+            (cd "$project" && cargo check --all-targets --locked)
+          done
+      - name: Check generated CRUD bridges and all five generators
+        run: |
+          set -euo pipefail
+          for project in "$RUNNER_TEMP/rust-generated"/*; do
             (cd "$project" && cargo test --all-targets --locked)
             (cd "$project" && cargo check --all-targets --locked)
           done

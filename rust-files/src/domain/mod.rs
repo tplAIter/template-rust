@@ -5,3 +5,6 @@ pub mod error;
 
 pub use entity::Entity;
 pub use error::DomainError;
+
+// CODEGEN:DOMAINS
+// CODEGEN:CRUD_DOMAINS

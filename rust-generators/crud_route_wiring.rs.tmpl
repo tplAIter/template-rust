@@ -1,1 +1,2 @@
-.route("/{{ .Name.Kebab }}", axum::routing::delete(crate::controllers::{{ .Name.Snake }}::delete))
+{{ .Marker }}
+        .merge(crate::controllers::{{ .Name.Snake }}::router())

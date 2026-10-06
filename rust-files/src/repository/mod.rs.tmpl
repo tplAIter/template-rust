@@ -11,3 +11,9 @@ pub trait EntityRepository: Send + Sync {
 }
 
 // CODEGEN:CRUD_REPOSITORIES
+
+{{ if is "layout" "layer_files" }}
+pub fn register_repository_layer() {}
+{{ else }}
+pub fn register_repository_entity() {}
+{{ end }}

@@ -1,3 +1,4 @@
+{{ .Marker }}
         .route(
             "/{{ .Name.Kebab }}",
             axum::routing::get(crate::handlers::{{ .Name.Snake }}::{{ .Name.Snake }}),

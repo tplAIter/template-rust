@@ -2,8 +2,8 @@ apiVersion: tplater.dev/v1alpha1
 kind: Template
 metadata:
   name: rust-service
-  version: 0.0.0-local
-  description: Rust service template checkpoint with neutral retained render assets.
+  version: 0.1.0-preview
+  description: Rust service with explicit repository, use-case, service and HTTP boundaries.
 engine:
   type: gotemplate
   root: rust-files
@@ -22,3 +22,93 @@ settings:
             title: PostgreSQL host port
             type: int
             default: 5432
+  - group: layout
+    title: Managed layer layout
+    type: select
+    default: layer_files
+    options:
+      - id: layer_files
+        title: Layer files
+      - id: per_entity
+        title: Per entity
+files:
+  - when: "database=none"
+    remove: ["src/db.rs", "migrations/**", "docker-compose.yml", ".env.example"]
+generators:
+  - kind: domain
+    snippet: rust-generators/domain.rs.tmpl
+    target: "src/domain/{{ .Name.Snake }}.rs"
+    anchors:
+      - file: src/domain/mod.rs
+        anchor: "CODEGEN:DOMAINS"
+        insert: rust-generators/domain_wiring.rs.tmpl
+  - kind: http-handler
+    snippet: rust-generators/handler.rs.tmpl
+    target: "src/handlers/{{ .Name.Snake }}.rs"
+    anchors:
+      - file: src/handlers/mod.rs
+        anchor: "CODEGEN:HANDLERS"
+        insert: rust-generators/handler_wiring.rs.tmpl
+      - file: src/routes.rs
+        anchor: "CODEGEN:ROUTES"
+        insert: rust-generators/route_wiring.rs.tmpl
+  - kind: worker
+    snippet: rust-generators/worker.rs.tmpl
+    target: "src/workers/{{ .Name.Snake }}.rs"
+    anchors:
+      - file: src/workers.rs
+        anchor: "CODEGEN:WORKERS"
+        insert: rust-generators/worker_wiring.rs.tmpl
+  - kind: migration
+    when: ["database=postgres"]
+    params:
+      - name: table
+        type: string
+        required: true
+        pattern: '^[a-z_][a-z0-9_]*$'
+        description: Explicit PostgreSQL table identifier, independent of the migration title.
+    targets:
+      - snippet: rust-generators/migration.sql.tmpl
+        target: "migrations/{{ .MigrationSeq }}_{{ .Name.Snake }}.sql"
+        numbered: goose
+  - kind: crud
+    when: ["database=postgres"]
+    params:
+      - name: table
+        type: string
+        required: true
+        pattern: '^[a-z_][a-z0-9_]*$'
+        description: Explicit PostgreSQL table identifier, independent of the migration title.
+    targets:
+      - snippet: rust-generators/crud_entity.rs.tmpl
+        target: "src/domain/{{ .Name.Snake }}_crud.rs"
+      - snippet: rust-generators/crud_repository.rs.tmpl
+        target: "src/repository/{{ .Name.Snake }}_repository.rs"
+      - snippet: rust-generators/crud_application.rs.tmpl
+        target: "src/application/{{ .Name.Snake }}.rs"
+      - snippet: rust-generators/crud_service.rs.tmpl
+        target: "src/service/{{ .Name.Snake }}.rs"
+      - snippet: rust-generators/crud_controller.rs.tmpl
+        target: "src/controllers/{{ .Name.Snake }}.rs"
+      - snippet: rust-generators/crud_migration.sql.tmpl
+        target: "migrations/{{ .MigrationSeq }}_{{ .Name.Snake }}_crud.sql"
+        numbered: goose
+    anchors:
+      - file: src/domain/mod.rs
+        anchor: "CODEGEN:CRUD_DOMAINS"
+        insert: rust-generators/crud_domain_wiring.rs.tmpl
+      - file: src/repository/mod.rs
+        anchor: "CODEGEN:CRUD_REPOSITORIES"
+        insert: rust-generators/crud_repository_wiring.rs.tmpl
+      - file: src/application.rs
+        anchor: "CODEGEN:CRUD_APPLICATIONS"
+        insert: rust-generators/crud_application_wiring.rs.tmpl
+      - file: src/service.rs
+        anchor: "CODEGEN:CRUD_SERVICES"
+        insert: rust-generators/crud_service_wiring.rs.tmpl
+      - file: src/controllers.rs
+        anchor: "CODEGEN:CRUD_CONTROLLERS"
+        insert: rust-generators/crud_controller_wiring.rs.tmpl
+      - file: src/routes.rs
+        anchor: "CODEGEN:CRUD_ROUTES"
+        insert: rust-generators/crud_route_wiring.rs.tmpl

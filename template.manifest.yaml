@@ -3,7 +3,15 @@ kind: Template
 metadata:
   name: rust-service
   version: 0.1.0-preview
-  description: Rust service with explicit repository, use-case, service and HTTP boundaries.
+  description: Rust Axum service with PostgreSQL/SQLx, explicit layers and layer_files or per_entity layouts.
+  labels:
+    tags: ["rust", "postgresql", "sqlx", "axum", "layer-files", "per-entity", "сервис", "сущность"]
+    lang: ["rust"]
+    framework: ["axum", "sqlx"]
+    candidate-kind: ["template"]
+    readiness: ["unknown"]
+    keywords: ["rust", "service", "entity", "crud", "postgresql", "sqlx", "migration", "сервис", "сущность", "миграция"]
+    use-cases: ["Create a Rust service", "Add a PostgreSQL CRUD vertical", "Choose layer_files or per_entity layout", "Создать сервис Rust", "Добавить CRUD сущность PostgreSQL", "Выбрать компоновку слоев"]
 engine:
   type: gotemplate
   root: rust-files

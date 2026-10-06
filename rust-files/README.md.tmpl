@@ -4,3 +4,11 @@ Generated Rust service. Set DATABASE_URL only for the PostgreSQL profile.
 Use cargo test --locked --offline and cargo check --locked --offline after verifying local cache availability.
 Forward SQLx migrations are applied separately by an approved operator; the service does not run migrations.
 CRUD IDs are caller-provided UUIDs; database acceptance requires a disposable PostgreSQL test environment.
+
+## Agent discovery bootstrap
+
+The discovery source is published at commit `29e9819df3c3e4ce170c025b74d895375090e2ea`; check the installed CLI/MCP capability and version before using it because an installed binary or server may predate that source. Detect capabilities with standard MCP `tools/list`, and use `template_discover` only when that exact tool and schema are advertised. `task` is required (UTF-8, 1–4096 bytes); optional fields are `sourceInput`, `projectContext`, `dir`, `language`, `framework`, and `labels` (`group=value`). Bounds are `maxCandidates` 1–256 (default 64), `limit` 1–20 (default 5), and MCP `maxBytes` 2048–32768 (default 16384). Responses are bounded descriptive data: `facts.status` is `not-requested`, `empty`, `observed`, or `unavailable`; errors and diagnostics are separate. Invoke only advertised read-only `nextToolCalls` (`template_show` or `graph_exports`) to retrieve exact context, preserving arguments, `expectedDigest`, and source-pin metadata unchanged; retain and report typed refusal/error/unavailable conditions.
+
+Workflow: discover capability, select a returned suggestion, read its exact bounded calls, then use that context for the task; never invent, replace, flatten, or manually reconstruct returned calls.
+
+When MCP discovery is unavailable or reports an error, record the MCP `isError` or protocol error. If an installed binary built from the published discovery source is available and its CLI version/capability check confirms discovery, use the verified read-only fallback `tplaiter template discover --task "..." --dir ./path --json`; omit `--dir` without a project path. Otherwise stop and report the unsupported capability. Existing and empty directories are valid observations; respect the output budget. Discovery does not enroll sources, apply changes, run hooks, or grant installation authority.

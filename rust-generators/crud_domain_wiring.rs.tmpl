@@ -1,2 +1,3 @@
 {{ .Marker }}
 pub mod {{ .Name.Snake }}_crud;
+pub use {{ .Name.Snake }}_crud::{{ .Name.Pascal }} as {{ .Name.Pascal }}CrudEntity;

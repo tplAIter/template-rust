@@ -23,12 +23,11 @@ impl {{ .Name.Pascal }}Repository {
         Ok(())
     }
     pub async fn find(&self, id: &str) -> Result<Option<{{ .Name.Pascal }}>, DomainError> {
-        let row =
-            sqlx::query("SELECT id::text AS id, name FROM \"{{ .Params.table }}\" WHERE id = $1::uuid")
-                .bind(id)
-                .fetch_optional(&self.pool)
-                .await
-                .map_err(|_| DomainError::Storage)?;
+        let row = sqlx::query("SELECT id::text AS id, name FROM \"{{ .Params.table }}\" WHERE id = $1::uuid")
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|_| DomainError::Storage)?;
         row.map(|row| {
             Ok({{ .Name.Pascal }} {
                 id: row.try_get("id").map_err(|_| DomainError::Storage)?,

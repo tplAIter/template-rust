@@ -1,5 +1,5 @@
 use crate::{
-    application::{{ .Name.Snake }}::{ {{ .Name.Pascal }}RepositoryPort, {{ .Name.Pascal }}UseCase},
+    application::{{ .Name.Snake }}::{{"{"}}{{ .Name.Pascal }}RepositoryPort, {{ .Name.Pascal }}UseCase{{"}"}},
     domain::{DomainError, {{ .Name.Snake }}_crud::{{ .Name.Pascal }}},
     repository::RepositoryFuture,
 };
@@ -93,8 +93,7 @@ mod tests {
     }
     #[tokio::test]
     async fn complete_bridge_round_trip_and_missing_rows() {
-        let service =
-            {{ .Name.Pascal }}Service::new({{ .Name.Pascal }}UseCase::new(Memory(Mutex::new(None))));
+        let service = {{ .Name.Pascal }}Service::new({{ .Name.Pascal }}UseCase::new(Memory(Mutex::new(None))));
         let mut value = {{ .Name.Pascal }} {
             id: "00000000-0000-0000-0000-000000000001".into(),
             name: "first".into(),

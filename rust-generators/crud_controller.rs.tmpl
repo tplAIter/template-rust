@@ -18,11 +18,7 @@ fn service(state: &HealthState) -> Result<Service, Response> {
     state
         .database
         .clone()
-        .map(|pool| {
-            {{ .Name.Pascal }}Service::new({{ .Name.Pascal }}UseCase::new({{ .Name.Pascal }}Repository::new(
-                pool,
-            )))
-        })
+        .map(|pool| {{ .Name.Pascal }}Service::new({{ .Name.Pascal }}UseCase::new({{ .Name.Pascal }}Repository::new(pool))))
         .ok_or_else(|| (StatusCode::SERVICE_UNAVAILABLE, "database unavailable").into_response())
 }
 fn error(value: DomainError) -> Response {
@@ -31,20 +27,18 @@ fn error(value: DomainError) -> Response {
         DomainError::NotFound => StatusCode::NOT_FOUND,
         DomainError::Storage => StatusCode::INTERNAL_SERVER_ERROR,
     };
-    (status,Json(serde_json::json!({"code": match status {StatusCode::BAD_REQUEST=>"validation_error",StatusCode::NOT_FOUND=>"not_found",_=>"storage_error"}}))).into_response()
+    (
+        status,
+        Json(serde_json::json!({"code": match status {StatusCode::BAD_REQUEST => "validation_error", StatusCode::NOT_FOUND => "not_found", _ => "storage_error"}})),
+    )
+        .into_response()
 }
 pub fn router() -> Router<HealthState> {
     Router::new()
         .route("/{{ .Name.Kebab }}", axum::routing::post(create))
-        .route(
-            "/{{ .Name.Kebab }}/{id}",
-            get(find).put(update).delete(delete),
-        )
+        .route("/{{ .Name.Kebab }}/{id}", get(find).put(update).delete(delete))
 }
-pub async fn create(
-    State(state): State<HealthState>,
-    Json(value): Json<{{ .Name.Pascal }}>,
-) -> Response {
+pub async fn create(State(state): State<HealthState>, Json(value): Json<{{ .Name.Pascal }}>) -> Response {
     let service = match service(&state) {
         Ok(v) => v,
         Err(e) => return e,

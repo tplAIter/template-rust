@@ -1,2 +1,3 @@
 {{ .Marker }}
 pub mod {{ .Name.Snake }};
+pub use {{ .Name.Snake }}::router as {{ .Name.Snake }}_router;

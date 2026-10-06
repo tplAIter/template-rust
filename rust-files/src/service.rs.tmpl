@@ -1,6 +1,10 @@
 //! Service boundary: policy/orchestration remains independent of transport.
 
-use crate::{application::GetEntity, domain::{DomainError, Entity}, repository::EntityRepository};
+use crate::{
+    application::GetEntity,
+    domain::{DomainError, Entity},
+    repository::EntityRepository,
+};
 
 pub struct EntityService<R> {
     get_entity: GetEntity<R>,
@@ -12,15 +16,50 @@ impl<R> EntityService<R>
 where
     R: EntityRepository,
 {
-    pub fn new(repository: R) -> Self { Self { get_entity: GetEntity::new(repository) } }
+    pub fn new(repository: R) -> Self {
+        Self {
+            get_entity: GetEntity::new(repository),
+        }
+    }
 
     pub async fn get(&self, id: &str) -> Result<Entity, DomainError> {
         self.get_entity.execute(id).await
     }
 }
-
 {{ if is "layout" "layer_files" }}
-pub fn register_service_layer() {}
+pub struct ServiceComposition<S> {
+    pub service: S,
+}
+
+impl<S> ServiceComposition<S> {
+    pub fn new(service: S) -> Self {
+        Self { service }
+    }
+
+    pub fn into_inner(self) -> S {
+        self.service
+    }
+}
+
+pub fn register_service_layer<S>(service: S) -> ServiceComposition<S> {
+    ServiceComposition::new(service)
+}
 {{ else }}
-pub fn register_service_entity() {}
+pub struct ServiceComposition<S> {
+    pub service: S,
+}
+
+impl<S> ServiceComposition<S> {
+    pub fn new(service: S) -> Self {
+        Self { service }
+    }
+
+    pub fn into_inner(self) -> S {
+        self.service
+    }
+}
+
+pub fn register_service_entity<S>(service: S) -> ServiceComposition<S> {
+    ServiceComposition::new(service)
+}
 {{ end }}

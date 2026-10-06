@@ -7,15 +7,15 @@ mod db;
 // Domain, error, and worker modules are extension points. They deliberately
 // start empty (or contain generated skeletons), so their public API may not
 // be consumed until an application adds a route or orchestration.
-pub mod domain;
 pub mod controllers;
-pub mod repository;
-pub mod service;
+pub mod domain;
 #[allow(dead_code)]
 mod error;
 mod handlers;
 mod health;
+pub mod repository;
 mod routes;
+pub mod service;
 mod telemetry;
 mod workers;
 

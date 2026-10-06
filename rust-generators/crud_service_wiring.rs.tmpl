@@ -1,2 +1,4 @@
 {{ .Marker }}
 pub mod {{ .Name.Snake }};
+pub use {{ .Name.Snake }}::{{ .Name.Pascal }}Service as {{ .Name.Pascal }}CrudService;
+pub type {{ .Name.Pascal }}ServiceComposition<U> = ServiceComposition<{{ .Name.Snake }}::{{ .Name.Pascal }}Service<U>>;

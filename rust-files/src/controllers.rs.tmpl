@@ -1,18 +1,33 @@
 //! Axum adapter boundary. Domain/application code never imports this module.
 
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, Json};
+use axum::{Json, extract::Path, http::StatusCode, response::IntoResponse};
 
 // CODEGEN:CRUD_CONTROLLERS
 
 pub async fn get_entity(Path(id): Path<String>) -> impl IntoResponse {
     if id.trim().is_empty() {
-        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"code": "validation_error"})));
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"code": "validation_error"})),
+        );
     }
-    (StatusCode::NOT_IMPLEMENTED, Json(serde_json::json!({"code": "planned"})))
+    (
+        StatusCode::NOT_IMPLEMENTED,
+        Json(serde_json::json!({"code": "planned"})),
+    )
 }
-
 {{ if is "layout" "layer_files" }}
-pub fn register_controller_layer() {}
+pub fn register_controller_layer(
+    base: axum::Router<crate::health::HealthState>,
+    generated: axum::Router<crate::health::HealthState>,
+) -> axum::Router<crate::health::HealthState> {
+    base.merge(generated)
+}
 {{ else }}
-pub fn register_controller_entity() {}
+pub fn register_controller_entity(
+    base: axum::Router<crate::health::HealthState>,
+    generated: axum::Router<crate::health::HealthState>,
+) -> axum::Router<crate::health::HealthState> {
+    base.merge(generated)
+}
 {{ end }}

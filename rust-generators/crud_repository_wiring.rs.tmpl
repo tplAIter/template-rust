@@ -1,2 +1,4 @@
 {{ .Marker }}
 pub mod {{ .Name.Snake }}_repository;
+pub use {{ .Name.Snake }}_repository::{{ .Name.Pascal }}Repository as {{ .Name.Pascal }}CrudRepository;
+pub type {{ .Name.Pascal }}RepositoryComposition = RepositoryComposition<{{ .Name.Snake }}_repository::{{ .Name.Pascal }}Repository>;

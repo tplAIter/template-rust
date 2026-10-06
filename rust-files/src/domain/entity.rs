@@ -8,6 +8,9 @@ pub struct Entity {
 
 impl Entity {
     pub fn new(id: impl Into<String>, name: impl Into<String>) -> Self {
-        Self { id: id.into(), name: name.into() }
+        Self {
+            id: id.into(),
+            name: name.into(),
+        }
     }
 }

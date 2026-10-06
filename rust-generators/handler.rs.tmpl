@@ -1,4 +1,4 @@
-use axum::{response::IntoResponse, Json};
+use axum::{Json, response::IntoResponse};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -7,7 +7,5 @@ struct {{ .Name.Pascal }}Response {
 }
 
 pub async fn {{ .Name.Snake }}() -> impl IntoResponse {
-    Json({{ .Name.Pascal }}Response {
-        resource: "{{ .Name.Kebab }}",
-    })
+    Json({{ .Name.Pascal }}Response { resource: "{{ .Name.Kebab }}" })
 }

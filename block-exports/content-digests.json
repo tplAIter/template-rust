@@ -9,12 +9,12 @@
   ],
   "formatterOptionsDigest": "sha256:9a81727c8ca2c86ea22cac7831d67c3768fa860f2674a19c4edc6e76f90f4799",
   "bodies": {
-    "block-exports/bodies/layer/controller.rs": "sha256:d100355bcae824764825f9b6219587b55edd8b1ac0689ab86583fdc779de87d4",
-    "block-exports/bodies/layer/repository.rs": "sha256:8a68bd09a6b92900b77ec57213cce141fd62708b4f90fbc675eadb4aec836007",
-    "block-exports/bodies/layer/service.rs": "sha256:8e289672a965b3b4a8bb22a124b80ef333f828627cd261857b16e23dc8b0c1ad",
-    "block-exports/bodies/per-entity/controller.rs": "sha256:4dc2dab75eafac14408086d8114630cdca0d8b788d95e4ea96abfbca7c22ad37",
-    "block-exports/bodies/per-entity/repository.rs": "sha256:c82a3d7b52c7fc28dcebc0000be6cff2561c786761c56695b3c6c6f23d0818a1",
-    "block-exports/bodies/per-entity/service.rs": "sha256:d00f92563801a13de9b72747fcd285c82289ead78969b742b13bdcce26da6722"
+    "block-exports/bodies/layer/controller.rs": "sha256:ac53ddad5164c0b088788b8591b44d62c77abfe1c8056d2389f29e38ae8037f8",
+    "block-exports/bodies/layer/repository.rs": "sha256:46c95db719b91e49227771e51dc9801c752f6aef5ef0f0897970c312a5c17b5b",
+    "block-exports/bodies/layer/service.rs": "sha256:16a709f8b7a1cf8a4620b98447d109d40d3d64351fd557f2bde43fa75be587a8",
+    "block-exports/bodies/per-entity/controller.rs": "sha256:82da425831099d4872ac7f5691c6bd466696a4180264b0b18a7ff4f2eb491a77",
+    "block-exports/bodies/per-entity/repository.rs": "sha256:c4b63111dd72d88b987225d630d340130ff575ec773b5f943c8463ec8b51a595",
+    "block-exports/bodies/per-entity/service.rs": "sha256:219a0379ff4b8ac6676910853d4a0d289d5eb9c1ef336c30536af21d743c1076"
   },
   "activeProvider": "rust-service-lifecycle.yaml",
   "layoutDescriptors": "reference only; never enroll as duplicate providers"

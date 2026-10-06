@@ -1,5 +1,8 @@
 pub fn init() {
     let filter = tracing_subscriber::EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| "info,tower_http=info".into());
-    tracing_subscriber::fmt().with_env_filter(filter).json().init();
+    tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .json()
+        .init();
 }

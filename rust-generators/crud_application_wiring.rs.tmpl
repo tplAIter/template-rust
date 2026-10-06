@@ -1,2 +1,4 @@
 {{ .Marker }}
 pub mod {{ .Name.Snake }};
+pub use {{ .Name.Snake }}::{{"{"}}{{ .Name.Pascal }}RepositoryPort, {{ .Name.Pascal }}UseCase{{"}"}};
+pub type {{ .Name.Pascal }}UseCaseComposition<R> = UseCaseComposition<{{ .Name.Pascal }}UseCase<R>>;

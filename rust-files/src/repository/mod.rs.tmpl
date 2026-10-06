@@ -4,16 +4,48 @@ use std::{future::Future, pin::Pin};
 
 use crate::domain::{DomainError, Entity};
 
-pub type RepositoryFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, DomainError>> + Send + 'a>>;
+pub type RepositoryFuture<'a, T> =
+    Pin<Box<dyn Future<Output = Result<T, DomainError>> + Send + 'a>>;
 
 pub trait EntityRepository: Send + Sync {
     fn find<'a>(&'a self, id: &'a str) -> RepositoryFuture<'a, Option<Entity>>;
 }
 
 // CODEGEN:CRUD_REPOSITORIES
-
 {{ if is "layout" "layer_files" }}
-pub fn register_repository_layer() {}
+pub struct RepositoryComposition<R> {
+    pub repository: R,
+}
+
+impl<R> RepositoryComposition<R> {
+    pub fn new(repository: R) -> Self {
+        Self { repository }
+    }
+
+    pub fn into_inner(self) -> R {
+        self.repository
+    }
+}
+
+pub fn register_repository_layer<R>(repository: R) -> RepositoryComposition<R> {
+    RepositoryComposition::new(repository)
+}
 {{ else }}
-pub fn register_repository_entity() {}
+pub struct RepositoryComposition<R> {
+    pub repository: R,
+}
+
+impl<R> RepositoryComposition<R> {
+    pub fn new(repository: R) -> Self {
+        Self { repository }
+    }
+
+    pub fn into_inner(self) -> R {
+        self.repository
+    }
+}
+
+pub fn register_repository_entity<R>(repository: R) -> RepositoryComposition<R> {
+    RepositoryComposition::new(repository)
+}
 {{ end }}

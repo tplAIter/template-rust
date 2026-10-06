@@ -1,5 +1,5 @@
 use anyhow::Context;
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::{PgPool, postgres::PgPoolOptions};
 
 pub async fn connect(database_url: &str) -> anyhow::Result<PgPool> {
     PgPoolOptions::new()

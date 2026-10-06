@@ -14,12 +14,14 @@ use axum::{
 };
 
 type Service = {{ .Name.Pascal }}Service<{{ .Name.Pascal }}UseCase<{{ .Name.Pascal }}Repository>>;
-fn service(state: &HealthState) -> Result<Service, Response> {
+fn service(state: &HealthState) -> Result<Service, Box<Response>> {
     state
         .database
         .clone()
         .map(|pool| {{ .Name.Pascal }}Service::new({{ .Name.Pascal }}UseCase::new({{ .Name.Pascal }}Repository::new(pool))))
-        .ok_or_else(|| (StatusCode::SERVICE_UNAVAILABLE, "database unavailable").into_response())
+        .ok_or_else(|| {
+            Box::new((StatusCode::SERVICE_UNAVAILABLE, "database unavailable").into_response())
+        })
 }
 fn error(value: DomainError) -> Response {
     let status = match value {
@@ -41,7 +43,7 @@ pub fn router() -> Router<HealthState> {
 pub async fn create(State(state): State<HealthState>, Json(value): Json<{{ .Name.Pascal }}>) -> Response {
     let service = match service(&state) {
         Ok(v) => v,
-        Err(e) => return e,
+        Err(e) => return *e,
     };
     match service.create(&value).await {
         Ok(()) => (StatusCode::CREATED, Json(value)).into_response(),
@@ -51,7 +53,7 @@ pub async fn create(State(state): State<HealthState>, Json(value): Json<{{ .Name
 pub async fn find(State(state): State<HealthState>, Path(id): Path<String>) -> Response {
     let service = match service(&state) {
         Ok(v) => v,
-        Err(e) => return e,
+        Err(e) => return *e,
     };
     match service.find(&id).await {
         Ok(v) => Json(v).into_response(),
@@ -69,7 +71,7 @@ pub async fn update(
     value.id = id;
     let service = match service(&state) {
         Ok(v) => v,
-        Err(e) => return e,
+        Err(e) => return *e,
     };
     match service.update(&value).await {
         Ok(()) => StatusCode::NO_CONTENT.into_response(),
@@ -79,7 +81,7 @@ pub async fn update(
 pub async fn delete(State(state): State<HealthState>, Path(id): Path<String>) -> Response {
     let service = match service(&state) {
         Ok(v) => v,
-        Err(e) => return e,
+        Err(e) => return *e,
     };
     match service.delete(&id).await {
         Ok(()) => StatusCode::NO_CONTENT.into_response(),

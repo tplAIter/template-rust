@@ -5,11 +5,13 @@ use sqlx::PgPool;
 {{- end }}
 
 #[derive(Clone)]
+{{ if is "database" "postgres" -}}
 pub struct HealthState {
-{{- if is "database" "postgres" }}
     pub database: Option<PgPool>,
-{{- end }}
 }
+{{- else -}}
+pub struct HealthState {}
+{{- end }}
 
 impl HealthState {
 {{- if is "database" "postgres" }}
